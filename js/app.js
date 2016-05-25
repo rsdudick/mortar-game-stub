@@ -66,9 +66,28 @@ window.onload = function() {
     var player = {
         x: 0,
         y: 0,
-        sizeX: 30,
-        sizeY: 30
+        sizeX: 60,
+        sizeY: 15
     };
+    var linkImage = new Image();
+    linkImage.src = "img/link.png";
+    function sprite (options) {
+        var that = {};
+
+        that.context = options.context;
+        that.width = options.width;
+        that.height = options.height;
+        that.image = options.image;
+
+        return that;
+    }
+    var link = sprite({
+        context: canvas.getContext("2d"),
+        width: 160,
+        height: 100,
+        image: linkImage
+    });
+    var playerTopRight = player.x + player.sizeX;
 
     // Don't run the game when the tab isn't visible
     window.addEventListener('focus', function() {
@@ -95,8 +114,8 @@ window.onload = function() {
 
     // Reset game to original state
     function reset() {
-        player.x = 0;
-        player.y = 0;
+        player.x = (canvas.width-player.sizeX)/2;
+        player.y = 10;
     }
 
     // Pause and unpause
@@ -116,24 +135,32 @@ window.onload = function() {
     // from js/input.js right before app.js
     function update(dt) {
         // Speed in pixels per second
-        var playerSpeed = 100;
+        var playerSpeed = 300;
 
-        if(GameInput.isDown('DOWN')) {
-            // dt is the number of seconds passed, so multiplying by
-            // the speed gives you the number of pixels to move
-            player.y += playerSpeed * dt;
-        }
+        // if(GameInput.isDown('DOWN')) {
+        //     // dt is the number of seconds passed, so multiplying by
+        //     // the speed gives you the number of pixels to move
+        //     if ( player.y+player.sizeY <= canvas.height ) {
+        //         player.y += playerSpeed * dt;
+        //     }
+        // }
 
-        if(GameInput.isDown('UP')) {
-            player.y -= playerSpeed * dt;
-        }
+        // if(GameInput.isDown('UP')) {
+        //     if ( player.y >= canvas.height-canvas.height ) {
+        //         player.y -= playerSpeed * dt;
+        //     }
+        // }
 
         if(GameInput.isDown('LEFT')) {
-            player.x -= playerSpeed * dt;
+            if ( player.x >= canvas.width-canvas.width ) {
+                player.x -= playerSpeed * dt;
+            }
         }
 
         if(GameInput.isDown('RIGHT')) {
-            player.x += playerSpeed * dt;
+            if ( player.x + player.sizeX <= canvas.width ) {
+                player.x += playerSpeed * dt;
+            }
         }
 
         // You can pass any letter to `isDown`, in addition to DOWN,
@@ -141,14 +168,91 @@ window.onload = function() {
         // if(GameInput.isDown('a')) { ... }
     }
 
-    // Draw everything
-    function render() {
+
+    // Draw Things
+    var playerRightSide = player.x + player.width;
+        if ( playerRightSide >= 200 )
+    function drawPlayer() {
         ctx.fillStyle = 'black';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+        // Player
+        ctx.beginPath();
         ctx.fillStyle = 'green';
         ctx.fillRect(player.x, player.y, player.sizeX, player.sizeY);
+        ctx.closePath();
+        playerTopRight += dx;
+
+
     }
+    var ballX = canvas.width/2;
+    // var ballX = canvas.width;
+    var ballY = canvas.height;
+    var dx = Math.floor(Math.random() * (5 - -5 + 1)) + -5;
+    var dy = -2;
+    var ballRadius = 5;
+
+    function drawBall() {
+        // Ball
+        ctx.beginPath();
+        ctx.arc(ballX, ballY, ballRadius, 0, Math.PI*2, false);
+            if (ballY + dy > canvas.height + ballRadius) {
+                dy = -dy;
+            }
+            if (ballY + dy < 0) {
+                dy = -dy;
+                console.log('Game Over')
+            }
+            if ( ballY - ballRadius <= player.y+player.sizeY ) {
+                if ( ballY - ballRadius >= player.y+player.sizeY/2) {
+                    if ( ballX + ballRadius >= player.x ) {
+                        if ( ballX - ballRadius <= player.x + player.sizeX ) {
+                            console.log("1")
+                            dy = -dy+1;
+                        }
+                    }
+                }
+            }
+            if ( ballY + ballRadius >= player.y ) {
+                if ( ballY + ballRadius <= player.y+player.sizeY/2)
+                    if ( ballX + ballRadius >= player.x ) {
+                        if ( ballX -ballRadius <= player.x + player.sizeX ) {
+                            console.log("CHeck")
+                            dy = -dy;
+                    }
+                }
+            }
+            if ( ballX + ballRadius >= player.x ) {
+                if ( ballX - ballRadius <= player.x + player.sizeX ) {
+                    if ( ballY >= player.y ) {
+                        if ( ballY <= player.y + player.sizeY ) {
+                            dx = -dx;
+                            console.log("test 3")
+                        }
+                    }
+                }
+            }
+            if (ballX + dx > canvas.width || ballX + dx < 0) {
+                dx =  -dx;
+            }
+
+        ctx.fillStyle = "red";
+        ctx.fill();
+        ctx.closePath();
+        ballX += dx;
+        ballY += dy;
+    }
+    // function drawLine () {
+    //     ctx.beginPath();
+    //     ctx.moveTo(0,0);
+    //     ctx.lineTo(canvas.width,480);
+    //     ctx.lineTo(60, 80);
+    //     ctx.closePath();
+    //     ctx.stroke();
+    //     ctx.strokeStyle = 'blue';
+    //     ctx.fillStyle = 'orange';
+    //     ctx.fill();
+    // }
 
     // The main game loop
     function main() {
@@ -160,7 +264,9 @@ window.onload = function() {
         var dt = (now - then) / 1000.0;
 
         update(dt);
-        render();
+        drawPlayer();
+        drawBall();
+        // drawLine();
 
         then = now;
         requestAnimFrame(main);
